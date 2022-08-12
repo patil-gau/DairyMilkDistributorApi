@@ -106,7 +106,7 @@ exports.updateOrder = async(req,res)=>{
             updatedAt : new Date()
         }
 
-        const updatedOrder =  await Order.findOneAndUpdate({_id:orderid},orderObj,{
+        const updatedOrder =  await Order.findOneAndUpdate({_id:orderid,user:userid},orderObj,{
             upsert:true,  //if no order is found then create new order
             new: true
         },(err,data)=>{
@@ -129,7 +129,7 @@ exports.updateOrder = async(req,res)=>{
     }
 }
 
-// update order  status using id
+// update order status using id
 exports.updateOrderStatus = async(req,res)=>{
   try {
 
@@ -164,7 +164,7 @@ exports.updateOrderStatus = async(req,res)=>{
     const nowDate = new Date();
 
     //update order status
-    await Order.findOneAndUpdate({_id:orderid},{$set:{orderStatus:orderStatus,updatedAt:nowDate}},{
+    await Order.findOneAndUpdate({_id:orderid,user:userid},{$set:{orderStatus:orderStatus,updatedAt:nowDate}},{
         new:true
     },(err,data)=>{
        if(!err){
@@ -206,7 +206,7 @@ exports.deleteOrder = async(req,res)=>{
     }
 
     //delete the order
-    await Order.findOneAndDelete({_id:orderid},(err,data)=>{
+    await Order.findOneAndDelete({_id:orderid,user:userid},(err,data)=>{
         if(!err){
             response.msg = "Order Deleted Successfully";
             response.status = 1;
@@ -277,7 +277,7 @@ exports.getOrders = async(req,res,next)=>{
           }      
  
          //get the data from database
-         const orders = await Order.find().sort({_id:1}).skip(offset).limit(limit);
+         const orders = await Order.find({user:userid}).sort({_id:1}).skip(offset).limit(limit);
          let key = offset.toString();
          let value = JSON.stringify(orders);
  

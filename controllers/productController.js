@@ -19,19 +19,24 @@ exports.checkStock = async(req,res)=>{
       }
   
       //get the remaining stock
-      const product = Product.findOne({_id:productid,updatedAt:date},{stock:1});
-
-      const remainingStock = product.stock;
-
-      response.msg = "Remaining Stock fetched success";
-      response.status = 1;
-      response.payload = {
+      const product = Product.findOne({_id:productid,updatedAt:date});
+      if(product){
+        const remainingStock = product.stock;
+        response.msg = "Remaining Stock fetched success";
+        response.status = 1;
+        response.payload = {
         remainingStock : remainingStock
+          }
+        return res.send(200).json(response);
       }
 
+      response.msg = "No Product Available or No Stock is Available";
+      response.status = 1;
+      response.payload = {
+      remainingStock : 0
+        }
       return res.send(200).json(response);
-      
-      
+            
     } catch (error) {
       response.status = 0;
       response.msg = String(error);
