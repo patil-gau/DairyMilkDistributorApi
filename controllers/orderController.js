@@ -2,7 +2,7 @@ const Order = require('../models/order.js');
 const Product = require('../models/product.js');
 const redisClient = require('../config/redisClient');
 const User = require('../models/user.js');
-const redisClient = require('../config/redisClient.js');
+const ObjectId = require("mongodb").ObjectId;
 
 
 //connect to register store
@@ -11,30 +11,33 @@ const redisClient = require('../config/redisClient.js');
 
 //add a new order
 exports.addOrder = async(req,res)=>{
+    const response = {
+        status:0,
+        msg: "",
+        payload:{}
+     }
+
     try {
-        const response = {
-            status:0,
-            msg: "",
-            payload:{}
-         }
+        
          const {userid} = req.params;
          const {orderItems,paymentInfo,totalAmount,orderStatus} = req.body;
 
         
          //validate if information is provided by user
-         if(!(id && orderItems && paymentInfo && totalAmount)){
+         if(!(userid && orderItems && paymentInfo && totalAmount)){
             response.msg = "All fields are required";
             return res.status(400).json(response);
          }
           
          //check if user exists
-          const user = await User.findOne({_id:userid});
+          const user = await User.findOne({_id: new ObjectId(userid)});
           if(!user){
                response.msg = "User doesn't exits. Please register";
                return res.status(401).json(response);
           }
         
         const orderObj = {
+            user : new ObjectId(userid),
             orderItems,
             paymentInfo,
             totalAmount,
@@ -46,13 +49,17 @@ exports.addOrder = async(req,res)=>{
 
         //decrement the stock of the product
         productIds = []
+        orderQuantity = 0;
         orderItems.forEach(element => {
             productIds.push(element.product);
+            orderQuantity+= element.quantity;
         });
+        
+        console.log(productIds,orderQuantity);
 
-        await Product.findOneAndUpdate(
+        Product.findOneAndUpdate(
         {_id:{$in:productIds}},
-        {$inc:{'stock':-1}},
+        {$inc:{'stock':-orderQuantity}},
         {new: true},
         (err,data)=>{
             if(!err){
@@ -75,17 +82,18 @@ exports.addOrder = async(req,res)=>{
 
 // update order using order id
 exports.updateOrder = async(req,res)=>{
+    const response = {
+        status:0,
+        msg: "",
+        payload:{}
+     }
     try {
-        const response = {
-            status:0,
-            msg: "",
-            payload:{}
-         }
+        
         const {userid,orderid} = req.params;
         const {orderItems,paymentInfo,totalAmount,orderStatus} = req.body;
 
         //validate if information is provided by user
-        if(!(id && orderItems && paymentInfo && totalAmount)){
+        if(!(userid && orderItems && paymentInfo && totalAmount)){
         response.msg = "All fields are required";
         return res.status(400).json(response);
         }
@@ -106,14 +114,14 @@ exports.updateOrder = async(req,res)=>{
             updatedAt : new Date()
         }
 
-        const updatedOrder =  await Order.findOneAndUpdate({_id:orderid,user:userid},orderObj,{
+        Order.findOneAndUpdate({_id:orderid},orderObj,{
             upsert:true,  //if no order is found then create new order
             new: true
         },(err,data)=>{
         if(!err){
             response.msg = "Order Updated Successfully";
             response.status = 1;
-            response.payload = updatedOrder;
+            response.payload = data;
             return res.status(200).json(response);   
         }
        //failed to update
@@ -131,13 +139,14 @@ exports.updateOrder = async(req,res)=>{
 
 // update order status using id
 exports.updateOrderStatus = async(req,res)=>{
-  try {
 
     const response = {
         status:0,
         msg: "",
         payload:{}
      }
+
+  try {
 
     const {userid,orderid} = req.params;
     const {orderStatus} = req.body;
@@ -164,7 +173,7 @@ exports.updateOrderStatus = async(req,res)=>{
     const nowDate = new Date();
 
     //update order status
-    await Order.findOneAndUpdate({_id:orderid,user:userid},{$set:{orderStatus:orderStatus,updatedAt:nowDate}},{
+    Order.findOneAndUpdate({_id:orderid},{$set:{orderStatus:orderStatus,updatedAt:nowDate}},{
         new:true
     },(err,data)=>{
        if(!err){
@@ -189,12 +198,12 @@ exports.updateOrderStatus = async(req,res)=>{
 
 //delete a order using id
 exports.deleteOrder = async(req,res)=>{
-    try {
     const response = {
         status:0,
         msg: "",
         payload:{}
     }
+    try {
     
     const {userid,orderid} = req.params;
 
@@ -206,7 +215,7 @@ exports.deleteOrder = async(req,res)=>{
     }
 
     //delete the order
-    await Order.findOneAndDelete({_id:orderid,user:userid},(err,data)=>{
+    Order.findOneAndDelete({_id:new ObjectId(orderid)},(err,data)=>{
         if(!err){
             response.msg = "Order Deleted Successfully";
             response.status = 1;
@@ -277,7 +286,7 @@ exports.getOrders = async(req,res,next)=>{
           }      
  
          //get the data from database
-         const orders = await Order.find({user:userid}).sort({_id:1}).skip(offset).limit(limit);
+         const orders = await Order.find().sort({_id:1}).skip(offset).limit(limit);
          let key = offset.toString();
          let value = JSON.stringify(orders);
  

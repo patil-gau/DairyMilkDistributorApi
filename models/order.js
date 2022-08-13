@@ -4,7 +4,7 @@ const orderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
-    required: true,
+    required: [true,"user is a required field"],
   },
   orderItems: [
     {
@@ -52,11 +52,10 @@ const orderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  createdAt: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-orderSchema.createIndex({_id:1});
 module.exports = mongoose.model("Order", orderSchema);

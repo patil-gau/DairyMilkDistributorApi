@@ -8,6 +8,6 @@ router.route("/:userid/addOrder").post(authMiddleWare,addOrder);
 router.route("/:userid/updateOrder/:orderid").put(authMiddleWare,updateOrder);
 router.route("/:userid/deleteOrder/:orderid").delete(authMiddleWare,deleteOrder);
 router.route("/:userid/updateOrderStatus/:orderid").patch(authMiddleWare,updateOrderStatus);
-router.route("/:userid/allorders/").patch(authMiddleWare,getOrders);
+router.route("/:userid/all_Orders").get(authMiddleWare,getOrders);
 
 module.exports = router;
